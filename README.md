@@ -1,5 +1,11 @@
 # GraphPlanner: Graph Memory-Augmented Agentic Routing for Multi-Agent LLMs
 
+> [!NOTE]
+> This is a **reproduction repository** for a course project, not the official implementation.
+> It is based on the official code at [ulab-uiuc/GraphPlanner](https://github.com/ulab-uiuc/GraphPlanner)
+> for the paper [*GraphPlanner: Graph Memory-Augmented Agentic Routing for Multi-Agent LLMs*](https://arxiv.org/abs/2604.23626)
+> (Feng et al., ICLR 2026). All credit for the method and original code goes to the authors.
+
 <p align="center">
     <a href="https://github.com/ulab-uiuc/GraphPlanner">
         <img alt="Stars" src="https://img.shields.io/github/stars/ulab-uiuc/GraphPlanner">
