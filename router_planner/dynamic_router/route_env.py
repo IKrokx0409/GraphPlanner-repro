@@ -45,9 +45,14 @@ class Env_route:
                  max_planner_calls: int = 5,
                  max_width: int = 3,
                  max_depth: int = 3,
-                 device=None, emb_model=None):
+                 device=None, emb_model=None, cost_alpha: float = 0.0):
 
         self.max_planner_calls = max_planner_calls
+        # Cost-utility trade-off (Eq. 4): every step is penalised by
+        # cost_alpha * cost / 1000. The released code had no penalty (alpha = 0).
+        self.cost_alpha = cost_alpha
+        # Task utility of the final answer of the current episode (None until done)
+        self.last_utility = None
         self.max_width = max_width
         self.max_depth = max_depth
 
@@ -126,6 +131,9 @@ class Env_route:
 
         # Force planner capability
         self.force_planner_first = False
+
+        # Parsed query-embedding tables, keyed by "train" / "test"
+        self._query_embed_cache = {}
 
     def _create_role_llm_embedding(self, role: str, llm_name: str) -> torch.Tensor:
         """Create embedding for role-LLM combination."""
@@ -389,13 +397,18 @@ class Env_route:
             self.his_index = [self.table_query_id, row["task_idx"]]
 
         self.current_query = row
+        self.last_utility = None
 
-        # Full query embeddings
-        src = self.test_query_data if self.test_mode else self.query_data
-        self.query_id_embed = {
-            "query.id": src["query.id"].tolist(),
-            "query_embedding": [self.to_tensor(x).to(self.device) for x in src["query_embedding"]]
-        }
+        # Full query embeddings (parsed once per split and cached: parsing the
+        # train split from strings takes ~10s, which dominated every reset)
+        split = "test" if self.test_mode else "train"
+        if split not in self._query_embed_cache:
+            src = self.test_query_data if self.test_mode else self.query_data
+            self._query_embed_cache[split] = {
+                "query.id": src["query.id"].tolist(),
+                "query_embedding": [self.to_tensor(x).to(self.device) for x in src["query_embedding"]]
+            }
+        self.query_id_embed = self._query_embed_cache[split]
 
         # Initialize tree with root node
         self.root_node = self._create_node(self.current_query["query"], parent=None, depth=0)
@@ -522,7 +535,7 @@ class Env_route:
         self.current_agent_llm_embedding = torch.stack(all_embeddings, dim=0)
 
         done = False
-        reward = 0.0
+        reward = -self._cost_penalty(step_cost)
 
         return (self.state, done, step_cost, reward, self.current_agent_llm_embedding,
                 self.local_memory_table, self.his_index, self.action_mask)
@@ -574,6 +587,8 @@ class Env_route:
 
         step_cost = self.compute_cost(llm_name, prompt_used, response)
         self.total_cost += step_cost
+        if is_final:
+            self.last_utility = reward
 
         # Update node - mark as completed after execution
         node["response"] = response
@@ -611,6 +626,7 @@ class Env_route:
         all_embeddings = [a["embedding"] for a in self.action_map.values()]
         self.current_agent_llm_embedding = torch.stack(all_embeddings, dim=0)
 
+        reward = reward - self._cost_penalty(step_cost)
         return (self.state, done, step_cost, reward, self.current_agent_llm_embedding,
                 self.local_memory_table, self.his_index, self.action_mask)
 
@@ -683,7 +699,7 @@ class Env_route:
         all_embeddings = [a["embedding"] for a in self.action_map.values()]
         self.current_agent_llm_embedding = torch.stack(all_embeddings, dim=0)
 
-        return (self.state, done, step_cost, 0.0, self.current_agent_llm_embedding,
+        return (self.state, done, step_cost, -self._cost_penalty(step_cost), self.current_agent_llm_embedding,
                 self.local_memory_table, self.his_index, self.action_mask)
 
     def _parse_dynamic_queries(self, text: str, fallback: str) -> list:
@@ -778,6 +794,10 @@ class Env_route:
         self.current_test_index = 0
 
     # -------------------- LLM calls --------------------
+    def _cost_penalty(self, step_cost: float) -> float:
+        """Per-step cost penalty alpha * C(a_t), with cost in the memory-table units."""
+        return self.cost_alpha * step_cost / 1000.0
+
     def compute_cost(self, llm_name: str, input_text: str, output_text: str) -> float:
         """Compute the monetary cost of an LLM call based on token counts."""
         in_tokens = len(tokenizer(input_text)["input_ids"])

@@ -24,6 +24,7 @@ from bert_score import score as bert_score_fn
 from openai import OpenAI
 import itertools
 import threading
+import time
 
 
 # ---------------------------------------------------------------------------
@@ -36,17 +37,23 @@ import threading
 _api_keys_str = os.environ.get("NVIDIA_API_KEYS", "")
 API_KEYS = [k.strip() for k in _api_keys_str.split(",") if k.strip()]
 
-if not API_KEYS:
+# Set MOCK_LLM=1 to replace API calls with canned responses (offline smoke tests).
+MOCK_LLM = os.environ.get("MOCK_LLM", "0") == "1"
+
+if not API_KEYS and not MOCK_LLM:
     import warnings
     warnings.warn(
         "NVIDIA_API_KEYS environment variable is not set. "
         "LLM API calls will fail. Set it as a comma-separated list of API keys."
     )
 
+# Any OpenAI-compatible endpoint can be used via LLM_BASE_URL (defaults to NVIDIA NIM).
+LLM_BASE_URL = os.environ.get("LLM_BASE_URL", "https://integrate.api.nvidia.com/v1")
+
 # Create one OpenAI-compatible client per key
 clients = [
     OpenAI(
-        base_url="https://integrate.api.nvidia.com/v1",
+        base_url=LLM_BASE_URL,
         api_key=key,
         timeout=120,
         max_retries=5,
@@ -311,28 +318,53 @@ def model_prompting(
     Returns:
         Generated text response.
     """
-    # Handle known broken model IDs
-    if llm_model == "google/codegemma-7b":
-        llm_model = "google/gemma-3-27b-it"
-
-    # Thread-safe client selection
     with _client_lock:
-        client = next(_client_cycle)
+        API_STATS["calls"] += 1
 
-    if client is None:
-        raise RuntimeError("No API keys configured. Set NVIDIA_API_KEYS env var.")
+    if MOCK_LLM:
+        return _mock_response(prompt)
 
-    try:
-        completion = client.chat.completions.create(
-            model=llm_model,
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=max_token_num,
-            temperature=temperature,
-            top_p=top_p,
-            stream=False,
-        )
-    except Exception as e:
-        print(f"API call failed for model {llm_model}: {e}")
-        raise
+    # Retry on top of the client's own retries, so a transient outage does not
+    # kill a long training run; an empty answer (scored as wrong) is the last resort.
+    for attempt in range(API_EXTRA_RETRIES + 1):
+        # Thread-safe client selection
+        with _client_lock:
+            client = next(_client_cycle)
 
-    return completion.choices[0].message.content
+        if client is None:
+            raise RuntimeError("No API keys configured. Set NVIDIA_API_KEYS env var.")
+
+        try:
+            completion = client.chat.completions.create(
+                model=llm_model,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=max_token_num,
+                temperature=temperature,
+                top_p=top_p,
+                stream=False,
+            )
+            return completion.choices[0].message.content or ""
+        except Exception as e:
+            print(f"API call failed for model {llm_model} (attempt {attempt + 1}): {e}")
+            if attempt < API_EXTRA_RETRIES:
+                time.sleep(10 * (attempt + 1))
+
+    with _client_lock:
+        API_STATS["failures"] += 1
+    return ""
+
+
+# Extra retry rounds in model_prompting after the OpenAI client's own retries.
+API_EXTRA_RETRIES = 3
+
+# Running counters, logged by the training scripts.
+API_STATS = {"calls": 0, "failures": 0}
+
+
+def _mock_response(prompt: str) -> str:
+    """Canned responses that exercise every code path without a real LLM."""
+    if "query decomposition assistant" in prompt:
+        return "What is the first part of the problem?\nWhat is the second part of the problem?"
+    if "professional summarizer" in prompt:
+        return "Combining the child answers, the answer is 42."
+    return "The answer is 42. Answer: A"

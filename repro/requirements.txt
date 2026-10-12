@@ -1,0 +1,14 @@
+bert-score==0.3.13
+filelock==3.16.1
+numpy==1.26.4
+openai==3.28.0
+pandas==2.3.3
+scikit-learn==1.7.2
+tiktoken==0.14.0
+torch==2.4.1+cpu
+torch-geometric==2.8.0.post1
+torch_scatter==2.1.2+pt24cpu
+torch_sparse==0.6.18+pt24cpu
+tqdm==4.70.1
+transformers==4.49.0
+wandb==0.30.0

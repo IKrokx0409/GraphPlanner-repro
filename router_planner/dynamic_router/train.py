@@ -30,7 +30,10 @@ import torch
 import random
 import warnings
 import gc
+import json
 import pickle
+from collections import defaultdict
+from ..shared.utils import API_STATS
 
 # Authenticate with wandb using environment variable (set WANDB_API_KEY in your environment)
 wandb_key = os.environ.get("WANDB_API_KEY")
@@ -190,12 +193,52 @@ def test_agent_on_dataset_subprocess(request):
             if done:
                 break
 
-    return episode_reward, t + 1, episode_cost
+    return (episode_reward, t + 1, episode_cost, test_env.current_query["task_name"],
+            test_env.last_utility, list(test_env.execution_path))
+
+
+# Domain grouping used in the paper's tables
+TASK_DOMAINS = {
+    "gsm8k": "Math", "math": "Math",
+    "mbpp": "Code", "human_eval": "Code",
+    "commonsense_qa": "CS", "arc_challenge": "CS", "openbook_qa": "CS",
+    "natural_qa": "WK", "trivia_qa": "WK",
+    "mmlu": "Popular", "gpqa": "Popular",
+}
+
+
+def summarize_test_records(records):
+    """Accuracy per task / domain / overall, plus cost and workflow statistics."""
+    by_task, by_domain = defaultdict(list), defaultdict(list)
+    role_counts, llm_counts = defaultdict(int), defaultdict(int)
+    for r in records:
+        by_task[r["task"]].append(r["utility"])
+        by_domain[TASK_DOMAINS.get(r["task"], "Other")].append(r["utility"])
+        for step in r["path"]:
+            role, llm = step.split("_", 1)
+            role_counts[role] += 1
+            llm_counts[llm] += 1
+    stats = {
+        "test_acc": float(np.mean([r["utility"] for r in records])),
+        "test_avg_llm_calls": float(np.mean([len(r["path"]) for r in records])),
+        "test_planner_rate": float(np.mean([any(s.startswith("planner_") for s in r["path"]) for r in records])),
+    }
+    stats.update({f"test_acc_domain/{d}": float(np.mean(v)) for d, v in sorted(by_domain.items())})
+    stats.update({f"test_acc_task/{t}": float(np.mean(v)) for t, v in sorted(by_task.items())})
+    stats.update({f"test_role_calls/{k}": v for k, v in sorted(role_counts.items())})
+    stats.update({f"test_llm_calls/{k}": v for k, v in sorted(llm_counts.items())})
+    return stats
 
 
 def test_agent_on_dataset(agent, test_query_file, llm_file, agent_file, max_planner_calls=5,
-                          max_timesteps=500, batch_size=2, his_memory=None):
-    """Test trained agent on the full test dataset."""
+                          max_timesteps=500, batch_size=2, his_memory=None,
+                          cost_alpha=0.0, save_path=None):
+    """Test trained agent on the full test dataset.
+
+    Pass an empty MemoryTable as his_memory for inductive inference, or the
+    training memory for transductive inference. If save_path is given, the
+    per-query records and summary statistics are written there as JSON.
+    """
 
     test_start_time = time.time()
     his_memory_table = his_memory.get_table()
@@ -211,13 +254,15 @@ def test_agent_on_dataset(agent, test_query_file, llm_file, agent_file, max_plan
         llm_file=llm_file,
         agent_file=agent_file,
         max_planner_calls=max_planner_calls,
-        device=device
+        device=device,
+        cost_alpha=cost_alpha
     )
     test_env.enable_test_mode()
 
     test_rewards = []
     test_episode_lengths = []
     test_costs = []
+    test_records = []
 
     if hasattr(agent, 'eval'):
         agent.eval()
@@ -272,6 +317,12 @@ def test_agent_on_dataset(agent, test_query_file, llm_file, agent_file, max_plan
             test_rewards.append(res[0])
             test_episode_lengths.append(res[1])
             test_costs.append(res[2])
+            test_records.append({
+                "task": res[3],
+                "utility": float(res[4]) if res[4] is not None else 0.0,
+                "cost": float(res[2]),
+                "path": res[5],
+            })
 
         del test_envs
         del states
@@ -302,6 +353,12 @@ def test_agent_on_dataset(agent, test_query_file, llm_file, agent_file, max_plan
         'test_samples': num_test_samples,
         'test_duration': test_duration
     }
+    test_stats.update(summarize_test_records(test_records))
+
+    if save_path:
+        with open(save_path, "w") as f:
+            json.dump({"stats": test_stats, "records": test_records}, f, indent=2)
+        print(f"Test details saved to: {save_path}")
 
     return test_stats
 
@@ -399,8 +456,13 @@ def train_ppo(query_file, llm_file, agent_file, test_query_file=None,
               experiment_name=None, gpu_id=None, test_every_n_episodes=10,
               batch_size=1, test_batch_size=1, test_before_train=True,
               save_dir="./checkpoints", load_best_model_path=None,
-              force_planner_episodes=50, gnn_backbone="dblayer"):
-    """Train PPO agent with flexible architecture and planner call limit."""
+              force_planner_episodes=50, gnn_backbone="dblayer",
+              cost_alpha=0.0, no_history=False, inductive_test=False):
+    """Train PPO agent with flexible architecture and planner call limit.
+
+    no_history: "w/o History" ablation -- the historical memory graph stays empty.
+    inductive_test: evaluate with an empty historical memory instead of the training one.
+    """
 
     # Create save directory
     os.makedirs(save_dir, exist_ok=True)
@@ -426,7 +488,13 @@ def train_ppo(query_file, llm_file, agent_file, test_query_file=None,
         "test_every_n_episodes": test_every_n_episodes,
         "test_query_file": test_query_file,
         "save_dir": save_dir,
-        "load_best_model_path": load_best_model_path
+        "load_best_model_path": load_best_model_path,
+        "llm_file": llm_file,
+        "query_file": query_file,
+        "gnn_backbone": gnn_backbone,
+        "cost_alpha": cost_alpha,
+        "no_history": no_history,
+        "inductive_test": inductive_test
     }
 
     if test_query_file:
@@ -470,7 +538,8 @@ def train_ppo(query_file, llm_file, agent_file, test_query_file=None,
     # Create environment with planner call limit
     env = Env_route(query_file=query_file, test_query_file=test_query_file,
                     llm_file=llm_file, agent_file=agent_file,
-                    max_planner_calls=max_planner_calls, device=device)
+                    max_planner_calls=max_planner_calls, device=device,
+                    cost_alpha=cost_alpha)
 
     # Create and optionally load memory table
     his_memory_table = MemoryTable()
@@ -498,7 +567,9 @@ def train_ppo(query_file, llm_file, agent_file, test_query_file=None,
                     max_planner_calls=max_planner_calls,
                     max_timesteps=max_timesteps,
                     batch_size=test_batch_size,
-                    his_memory=his_memory_table
+                    his_memory=MemoryTable() if inductive_test else his_memory_table,
+                    cost_alpha=cost_alpha,
+                    save_path=os.path.join(save_dir, f"{experiment_name}_test_ep0.json")
                 )
 
             print(f"Initial Test Results (Before Training):")
@@ -560,7 +631,7 @@ def train_ppo(query_file, llm_file, agent_file, test_query_file=None,
                 'his_index': his_indexs[i],
                 'his_memory_table': his_memory_table.get_table(),
                 'max_timesteps': max_timesteps,
-                'memory_table_obj': his_memory_table,
+                'memory_table_obj': None if no_history else his_memory_table,
                 'action_mask': action_masks[i],
                 'force_planner_first': force_planner_first
             }
@@ -673,17 +744,26 @@ def train_ppo(query_file, llm_file, agent_file, test_query_file=None,
                     max_planner_calls=max_planner_calls,
                     max_timesteps=max_timesteps,
                     batch_size=test_batch_size,
-                    his_memory=his_memory_table
+                    his_memory=MemoryTable() if inductive_test else his_memory_table,
+                    cost_alpha=cost_alpha,
+                    save_path=os.path.join(save_dir, f"{experiment_name}_test_ep{episode + 1}.json")
                 )
 
             log_dict.update(test_stats)
-            print(f"Test Results: Avg Reward = {test_stats['test_avg_reward']:.2f}")
+            print(f"Test Results: Avg Reward = {test_stats['test_avg_reward']:.3f}, "
+                  f"Acc = {test_stats['test_acc']:.3f}, Avg Cost = {test_stats['test_avg_cost']:.1f}, "
+                  f"Avg LLM calls = {test_stats['test_avg_llm_calls']:.2f}")
+            print("  " + ", ".join(f"{k.split('/')[1]}={v:.3f}" for k, v in test_stats.items()
+                                   if k.startswith("test_acc_domain/")))
+
+        log_dict["api_calls"] = API_STATS["calls"]
+        log_dict["api_failures"] = API_STATS["failures"]
 
         wandb.log(log_dict)
 
         if episode % 100 == 0:
             print(
-                f"Episode {episode}, Reward: {episode_reward:.2f}, Running: {running_reward:.2f}, Best: {best_running_reward:.2f}, Memory: {his_memory_table.get_size()}, Force Planner: {force_planner_first}")
+                f"Episode {episode}, Reward: {episode_reward:.2f}, Running: {running_reward:.2f}, Best: {best_running_reward:.2f}, Memory: {his_memory_table.get_size()}, Force Planner: {force_planner_first}, API calls: {API_STATS['calls']} (failed {API_STATS['failures']})")
 
         if running_reward > 10:
             print(f"Problem solved! Episode {episode}")
@@ -749,6 +829,12 @@ def parse_args():
     parser.add_argument('--force_planner_episodes', type=int, default=0,
                         help='Number of episodes to force planner action as first step')
     parser.add_argument("--gnn_backbone", type=str, default="dblayer", choices=["dblayer", "homo", "hetero"])
+    parser.add_argument("--cost_alpha", type=float, default=0.0,
+                        help="Cost-utility trade-off alpha in Eq. 4 (0 = released code behaviour)")
+    parser.add_argument("--no_history", action="store_true",
+                        help="w/o History ablation: never write to the historical memory graph")
+    parser.add_argument("--inductive_test", action="store_true",
+                        help="Evaluate with an empty historical memory (inductive) instead of the training memory")
 
     return parser.parse_args()
 
@@ -853,7 +939,10 @@ def main():
         save_dir=args.save_dir,
         load_best_model_path=args.load_best_model_path,
         force_planner_episodes=args.force_planner_episodes,
-        gnn_backbone=args.gnn_backbone
+        gnn_backbone=args.gnn_backbone,
+        cost_alpha=args.cost_alpha,
+        no_history=args.no_history,
+        inductive_test=args.inductive_test
     )
 
     print(f"\nBest model can be loaded using:")
