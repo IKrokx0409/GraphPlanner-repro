@@ -6,6 +6,87 @@
 > for the paper [*GraphPlanner: Graph Memory-Augmented Agentic Routing for Multi-Agent LLMs*](https://arxiv.org/abs/2604.23626)
 > (Feng et al., ICLR 2026). All credit for the method and original code goes to the authors.
 
+## Quick start for this reproduction（复现快速上手）
+
+当前进度、下一步、对官方代码的修改记录和已知问题见 [`repro/NOTES.md`](repro/NOTES.md)；用 Claude Code 的话，它会自动读取 [`CLAUDE.md`](CLAUDE.md)。以下命令都在仓库根目录执行，只需要 CPU，LLM 通过 NVIDIA NIM API 调用。
+
+**1. 克隆仓库并安装环境**
+
+```bash
+git clone git@github.com:IKrokx0409/GraphPlanner-repro.git
+cd GraphPlanner-repro
+conda create -n graphplanner python=3.10 -y
+conda activate graphplanner
+pip install torch==2.4.1 --index-url https://download.pytorch.org/whl/cpu
+pip install torch-scatter torch-sparse -f https://data.pyg.org/whl/torch-2.4.0+cpu.html
+pip install -r repro/requirements.txt
+```
+
+`repro/requirements.txt` 里固定了 `filelock==3.16.1`，不要升级，否则代码题评测会崩溃。
+
+**2. 下载本地模型**（Longformer 用于生成嵌入，GPT-2 分词器用于统计 token；国内网络可先 `export HF_ENDPOINT=https://hf-mirror.com`）
+
+```bash
+hf download allenai/longformer-base-4096 --include "*.json" "*.txt" "pytorch_model.bin"
+hf download gpt2 --include "*.json" "*.txt"
+```
+
+**3. 生成数据划分**（去掉训练集中与测试集重合的样本，并生成 110 题测试子集；结果固定，可重复生成）
+
+```bash
+python -m repro.prepare_data
+```
+
+**4. 配置 API key 和环境变量**（key 在 build.nvidia.com 免费申请，不要提交到仓库）
+
+```bash
+export NVIDIA_API_KEYS="nvapi-..."   # 多个 key 用逗号分隔
+export HF_HUB_OFFLINE=1               # 模型已下载，避免 transformers 联网时卡住
+export WANDB_MODE=offline             # 不需要 W&B 账号
+python -m repro.check_api             # 4 个模型都显示 [OK ] 再继续
+```
+
+**5. （可选）用模拟 LLM 冒烟测试**，不消耗 API 额度：
+
+```bash
+MOCK_LLM=1 python -m router_planner.dynamic_router.train \
+  --query_file data/router_data_train_clean.csv --test_query_file data/router_data_test_small.csv \
+  --llm_file config/llm_repro_phase2.json --agent_file config/agent_roles_with_embeddings.json \
+  --max_episodes 3 --batch_size 2 --test_every_n_episodes 1000 \
+  --save_dir checkpoints_smoke --experiment_name smoke
+```
+
+**6. 跑 baseline**（单个 LLM 和随机路由；`nemotron-3.5-bolt-e4b` 已跑完，结果在 `results/`）
+
+```bash
+python -m repro.evaluate --policy fixed --llm nemotron-3.5-lightning-30b-a3b --batch_size 2 --out results/fixed_nemotron-3.5-lightning-30b-a3b.json
+python -m repro.evaluate --policy fixed --llm llama-3.2-90b-instruct --batch_size 4 --out results/fixed_llama-3.2-90b-instruct.json
+python -m repro.evaluate --policy fixed --llm minimax-m3.1-flash --batch_size 4 --out results/fixed_minimax-m3.1-flash.json
+python -m repro.evaluate --policy random --batch_size 4 --out results/random.json
+```
+
+**7. 训练 GraphPlanner**（每个 episode 是 `batch_size` 条训练题；每 50 个 episode 在测试子集上测一次，结果写入 `checkpoints/main_test_ep*.json`）
+
+```bash
+mkdir -p logs
+python -m router_planner.dynamic_router.train \
+  --query_file data/router_data_train_clean.csv --test_query_file data/router_data_test_small.csv \
+  --llm_file config/llm_repro_phase2.json --agent_file config/agent_roles_with_embeddings.json \
+  --max_planner_calls 2 --max_episodes 150 --batch_size 4 \
+  --test_batch_size 4 --test_every_n_episodes 50 \
+  --save_dir checkpoints --experiment_name main 2>&1 | tee logs/train_main.txt
+```
+
+可选参数：`--no_history`（去掉历史记忆的消融）、`--cost_alpha 0.5`（在 reward 中加入成本惩罚）。
+
+**8. 评测训练好的模型并汇总**
+
+```bash
+python -m repro.evaluate --policy graphplanner --model_path checkpoints/main_best_model.pth --batch_size 4 --out results/graphplanner.json
+python -m repro.evaluate --policy graphplanner --inductive --model_path checkpoints/main_best_model.pth --batch_size 4 --out results/graphplanner_inductive.json
+python -m repro.summarize results/*.json --out results/summary.md
+```
+
 <p align="center">
     <a href="https://github.com/ulab-uiuc/GraphPlanner">
         <img alt="Stars" src="https://img.shields.io/github/stars/ulab-uiuc/GraphPlanner">
