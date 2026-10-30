@@ -324,6 +324,10 @@ def model_prompting(
     if MOCK_LLM:
         return _mock_response(prompt)
 
+    # Per-model overrides from the LLM config (see register_model_options)
+    options = MODEL_OPTIONS.get(llm_model, {})
+    max_token_num = options.get("max_tokens", max_token_num)
+
     # Retry on top of the client's own retries, so a transient outage does not
     # kill a long training run; an empty answer (scored as wrong) is the last resort.
     for attempt in range(API_EXTRA_RETRIES + 1):
@@ -342,6 +346,7 @@ def model_prompting(
                 temperature=temperature,
                 top_p=top_p,
                 stream=False,
+                extra_body=options.get("extra_body"),
             )
             return completion.choices[0].message.content or ""
         except Exception as e:
@@ -352,6 +357,18 @@ def model_prompting(
     with _client_lock:
         API_STATS["failures"] += 1
     return ""
+
+
+# Per-model request overrides, keyed by model id: {"max_tokens": int, "extra_body": dict}.
+MODEL_OPTIONS = {}
+
+
+def register_model_options(llm_data: dict) -> None:
+    """Register the optional "max_tokens" / "extra_body" fields of an LLM config."""
+    for info in llm_data.values():
+        options = {k: info[k] for k in ("max_tokens", "extra_body") if k in info}
+        if options:
+            MODEL_OPTIONS[info["model"]] = options
 
 
 # Extra retry rounds in model_prompting after the OpenAI client's own retries.

@@ -29,6 +29,7 @@ def main():
     print(f"endpoint: {utils.LLM_BASE_URL}, keys: {len(utils.API_KEYS)}")
     ok = 0
     llms = json.load(open(args.llm_file))
+    utils.register_model_options(llms)
     for key, info in llms.items():
         start = time.time()
         try:

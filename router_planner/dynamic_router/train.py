@@ -194,7 +194,8 @@ def test_agent_on_dataset_subprocess(request):
                 break
 
     return (episode_reward, t + 1, episode_cost, test_env.current_query["task_name"],
-            test_env.last_utility, list(test_env.execution_path))
+            test_env.last_utility, list(test_env.execution_path),
+            test_env.root_node.get("response"), str(test_env.current_query["gt"]))
 
 
 # Domain grouping used in the paper's tables
@@ -322,6 +323,8 @@ def test_agent_on_dataset(agent, test_query_file, llm_file, agent_file, max_plan
                 "utility": float(res[4]) if res[4] is not None else 0.0,
                 "cost": float(res[2]),
                 "path": res[5],
+                "response": res[6],
+                "gt": res[7],
             })
 
         del test_envs

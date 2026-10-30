@@ -42,10 +42,14 @@ def eval_perf(
     Returns:
         Score as a float (0.0 to 1.0).
     """
-    # Override metric for specific QA/MC tasks to use CEM
+    # Override metric for specific QA tasks to use CEM.
+    # MMLU / GPQA keep their "em_mc" metric from the data: CEM against a single
+    # option letter is degenerate ("a" is stripped as an article, so a ground
+    # truth of "A" matches any prediction, and "b"/"c"/"d" match any word
+    # containing that letter).
     if task_name in [
         "natural_qa", "trivia_qa", "squad", "boolq",
-        "mmlu", "gpqa", "agentverse-mgsm", "agentverse-logicgrid",
+        "agentverse-mgsm", "agentverse-logicgrid",
     ]:
         metric = "cem"
 

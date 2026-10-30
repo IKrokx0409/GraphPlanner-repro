@@ -20,7 +20,7 @@ import torch
 import ast
 import re
 from transformers import GPT2Tokenizer
-from ..shared.utils import model_prompting, EmbeddingModel
+from ..shared.utils import model_prompting, EmbeddingModel, register_model_options
 from ..shared.task_prompting import generate_task_query
 from ..shared.response_eval import eval_perf
 import numpy as np
@@ -80,6 +80,7 @@ class Env_route:
         items = list(self.llm_data.items())
         # Preserve a sane slice if original intended to exclude some items
         self.llm_data = dict(items[:3] + items[4:-8]) if len(items) > 10 else dict(items)
+        register_model_options(self.llm_data)
 
         # === Agent roles meta ===
         with open(agent_file, "r") as f:

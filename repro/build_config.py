@@ -2,9 +2,9 @@
 Build the LLM config used for the reproduction.
 
 The original config points at NVIDIA NIM model IDs, most of which have been
-retired. This script writes a new config with currently-hosted replacements
-(see API对照表.md), re-embedding each description with the same Longformer
-mean-pooling used to produce the original embeddings.
+retired. This script writes a new config with currently callable replacements,
+re-embedding each description with the same Longformer mean-pooling used to
+produce the original embeddings.
 
 Usage:
     python -m repro.build_config [--out config/llm_repro_phase2.json]
@@ -15,37 +15,41 @@ import json
 
 from router_planner.shared.utils import EmbeddingModel
 
-# key -> (NIM model id, price per 1M tokens, description)
+# key -> (NIM model id, price per 1M tokens, description, extra request options)
+#
+# Only these models were callable from a free NIM account on 2026-10-30; most
+# other catalog entries (incl. the first replacement set) returned 404 for the
+# account. Prices are nominal cost signals scaled by model size following the
+# paper's Table 10 (the NIM free tier itself is not billed).
 PHASE2_LLMS = {
-    "mistral-nemo-minitron-8b": (
-        "nvidia/mistral-nemo-minitron-8b-8k-instruct", 0.2,
-        "Mistral-NeMo-Minitron-8B-Instruct is an 8-billion parameter model pruned and distilled by NVIDIA "
-        "from Mistral-NeMo-12B, offering strong general instruction following, reasoning and question answering "
-        "for its size. It is priced at $0.20 per million input tokens and $0.20 per million output tokens.",
+    "nemotron-3.5-bolt-e4b": (
+        "nvidia/nemotron-3.5-bolt-e4b", 0.1,
+        "Nemotron-3.5-Bolt-E4B is a compact, low-latency model from NVIDIA's Nemotron 3.5 family, suited to "
+        "quick instruction following and short answers at a very low cost of $0.10 per million input and "
+        "output tokens.",
+        {},
     ),
-    "codegemma-7b": (
-        "google/codegemma-7b", 0.2,
-        "CodeGemma-7B is a specialized variant of the Gemma model family that focuses exclusively on code "
-        "generation and completion tasks. This programming-oriented model provides robust coding assistance "
-        "capabilities at an affordable rate of $0.20 per million input tokens and $0.20 per million output tokens.",
+    "nemotron-3.5-lightning-30b-a3b": (
+        "nvidia/nemotron-3.5-lightning-30b-a3b", 0.3,
+        "Nemotron-3.5-Lightning-30B-A3B is a 30-billion parameter mixture-of-experts model from NVIDIA with about "
+        "3 billion active parameters, offering solid general reasoning and question answering at $0.30 per "
+        "million input and output tokens.",
+        # Hybrid reasoning model: disable the thinking trace so answers fit the token budget
+        {"extra_body": {"chat_template_kwargs": {"thinking": False, "enable_thinking": False}}},
     ),
-    "gemma-3-12b-it": (
-        "google/gemma-3-12b-it", 0.3,
-        "Gemma-3-12B-IT is a 12-billion parameter instruction-tuned model from Google's third-generation Gemma "
-        "family, with improved reasoning, math and multilingual abilities over Gemma-2. It is priced at $0.30 per "
-        "million input tokens and $0.30 per million output tokens.",
+    "llama-3.2-90b-instruct": (
+        "meta/llama-3.2-90b-vision-instruct", 1.2,
+        "Llama-3.2-90B-Instruct is Meta's 90-billion parameter model (used here in text-only mode), the largest "
+        "and most capable model in the pool for knowledge-intensive and complex tasks, priced at $1.20 per "
+        "million input and output tokens.",
+        {},
     ),
-    "granite-3.0-8b-instruct": (
-        "ibm/granite-3.0-8b-instruct", 0.2,
-        "Granite-3.0-8B-Instruct is IBM's 8-billion parameter enterprise model tuned for instruction following, "
-        "question answering, summarization and retrieval-augmented generation. It is priced at $0.20 per million "
-        "input tokens and $0.20 per million output tokens.",
-    ),
-    "mistral-7b-instruct-v0.3": (
-        "mistralai/mistral-7b-instruct-v0.3", 0.2,
-        "Mistral-7B-Instruct-v0.3 is a fast and efficient 7-billion parameter model specifically designed for "
-        "instruction-following tasks. This streamlined model provides quick response times and reliable "
-        "performance at cost-effective pricing of $0.20 per million input and output tokens.",
+    "minimax-m3.1-flash": (
+        "minimaxai/minimax-m3.1-flash", 0.6,
+        "MiniMax-M3.1-Flash is a fast reasoning-oriented model from MiniMax that thinks briefly before answering, "
+        "which helps on math and multi-step problems, priced at $0.60 per million input and output tokens.",
+        # Its reasoning trace cannot be turned off and counts towards max_tokens
+        {"max_tokens": 2048},
     ),
 }
 
@@ -57,13 +61,14 @@ def main():
 
     model = EmbeddingModel()
     config = {}
-    for key, (model_id, price, feature) in PHASE2_LLMS.items():
+    for key, (model_id, price, feature, options) in PHASE2_LLMS.items():
         config[key] = {
             "feature": feature,
             "input_price": price,
             "output_price": price,
             "model": model_id,
             "embedding": model.get_embedding(feature).tolist(),
+            **options,
         }
         print(f"embedded {key} -> {model_id}")
 
