@@ -18,6 +18,15 @@ from .evaluation.mbpp.mbpp_eval import entry_point_item_mbpp
 from .math_eval import last_boxed_only_string, remove_boxed, is_equiv
 
 
+_FENCE = re.compile(r"```[ \t]*(?:python3?|py)?[ \t]*\n(.*?)(?:```|$)", re.DOTALL | re.IGNORECASE)
+
+
+def _strip_markdown_fence(code: str) -> str:
+    """Return the body of the first markdown code fence in code, or code unchanged if there is none."""
+    m = _FENCE.search(code)
+    return m.group(1) if m else code
+
+
 def eval_perf(
     metric: str,
     prediction: str,
@@ -120,14 +129,20 @@ def eval_perf(
             r"\[BEGIN\](.*?)(?:\[DONE\]|\[Done\]|$)", prediction, re.DOTALL | re.IGNORECASE
         )
 
+        # Reproduction fix: several models wrap the code in a markdown fence inside (or instead of)
+        # the [BEGIN]...[Done] tags; the fence lines would otherwise be executed as code
+        extracted = code_match.group(1) if code_match else (prediction if "```" in prediction else None)
+        if extracted is not None:
+            extracted = _strip_markdown_fence(extracted)
+
         if is_mbpp:
-            code = code_match.group(1).strip() if code_match else prediction.strip()
+            code = extracted.strip() if extracted is not None else prediction.strip()
             sample = {"task_id": int(task_id), "completion": code}
             result = entry_point_item_mbpp(sample, mbpp_path)
             return result["pass@1"]
         else:
-            if code_match:
-                raw_code = code_match.group(1).strip()
+            if extracted is not None:
+                raw_code = extracted.strip()
                 # If the code doesn't start with 'def ', indent it as a function body
                 code = raw_code if raw_code.lstrip().startswith("def ") else \
                     "    " + raw_code.replace("\n", "\n    ")

@@ -639,11 +639,11 @@ class Env_route:
 
         node = self.current_node
 
-        # Ensure there are child responses to summarize
-        child_responses = [child["response"] for child in node["children"]
-                           if child.get("response")]
-        if not child_responses:
+        # A child whose LLM call was rejected by the API has an empty response; keep
+        # it visible instead of aborting the whole evaluation
+        if not node["children"]:
             raise ValueError("No child responses to summarize")
+        child_responses = [child.get("response") or "(no answer)" for child in node["children"]]
 
         context = "\n".join(child_responses)
         summary, prompt_used = self.summarizer(context, llm_name, parent_query=node["query"])

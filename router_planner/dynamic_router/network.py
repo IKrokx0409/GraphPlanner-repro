@@ -475,32 +475,39 @@ class RouteAgent:
                 bi = indices[start : min(start + batch_size, dataset_size)]
                 bs = len(bi)
 
-                b_probs, b_vals = [], []
+                # Reproduction change: backward per sample with gradient accumulation. Every forward
+                # pass builds a graph over the whole historical memory, so keeping the autograd graphs
+                # of a full mini-batch for one backward made peak memory grow with buffer batch x
+                # memory size (~6 GB per process by episode 1000). The losses are batch means, so
+                # summing per-sample terms divided by bs gives the same gradients and the same step.
+                self.policy_optimizer.zero_grad()
+                self.value_optimizer.zero_grad()
+                pl, vl, ent_sum = 0.0, 0.0, 0.0
                 for i in range(bs):
-                    lt = {"memory_table": local_mems[bi[i]], "query_table": global_query_id_embed, "LLM_table": global_LLM_role_id_embed}
-                    ap = self.policy([states[bi[i]]], lt, his_tables, his_idxs[bi[i]], masks[bi[i]].unsqueeze(0))
-                    b_probs.append(ap.squeeze(0))
-                    sv = self.value([states[bi[i]]], lt, his_tables, his_idxs[bi[i]])
-                    b_vals.append(sv.squeeze())
+                    j = bi[i]
+                    lt = {"memory_table": local_mems[j], "query_table": global_query_id_embed, "LLM_table": global_LLM_role_id_embed}
+                    ap = self.policy([states[j]], lt, his_tables, his_idxs[j], masks[j].unsqueeze(0))
+                    sv = self.value([states[j]], lt, his_tables, his_idxs[j])
 
-                b_probs = torch.stack(b_probs)
-                b_vals = torch.stack(b_vals)
-                mp = b_probs * masks[bi]
-                mp = mp / (mp.sum(dim=1, keepdim=True) + 1e-10)
-                lp = torch.log(mp + 1e-10)
-                new_lp = lp.gather(1, actions[bi].unsqueeze(1)).squeeze(1)
-                ent = -(mp * lp).sum(dim=1)
+                    mp = ap.squeeze(0) * masks[j]
+                    mp = mp / (mp.sum() + 1e-10)
+                    lp = torch.log(mp + 1e-10)
+                    new_lp = lp[actions[j]]
+                    ent = -(mp * lp).sum()
 
-                ratios = torch.exp(new_lp - old_log_probs[bi])
-                s1 = ratios * advantages[bi]
-                s2 = torch.clamp(ratios, 1 - self.eps_clip, 1 + self.eps_clip) * advantages[bi]
-                pl = -torch.min(s1, s2).mean() - self.entropy_coef * ent.mean()
-                vl = F.mse_loss(b_vals.reshape(-1), returns[bi].reshape(-1))
+                    ratio = torch.exp(new_lp - old_log_probs[j])
+                    s1 = ratio * advantages[j]
+                    s2 = torch.clamp(ratio, 1 - self.eps_clip, 1 + self.eps_clip) * advantages[j]
+                    pl_i = (-torch.min(s1, s2) - self.entropy_coef * ent) / bs
+                    vl_i = (sv.squeeze() - returns[j]) ** 2 / bs
+                    pl_i.backward()
+                    vl_i.backward()
+                    pl += pl_i.item(); vl += vl_i.item(); ent_sum += ent.item()
 
-                self.policy_optimizer.zero_grad(); pl.backward(); self.policy_optimizer.step()
-                self.value_optimizer.zero_grad(); vl.backward(); self.value_optimizer.step()
+                self.policy_optimizer.step()
+                self.value_optimizer.step()
 
-                total_pl += pl.item(); total_vl += vl.item(); total_ent += ent.mean().item(); n_batches += 1
+                total_pl += pl; total_vl += vl; total_ent += ent_sum / bs; n_batches += 1
 
         self.policy_old.load_state_dict(self.policy.state_dict())
         return (total_pl / max(n_batches, 1), total_vl / max(n_batches, 1), total_ent / max(n_batches, 1))

@@ -9,8 +9,9 @@ import json
 import contextlib
 import io
 import signal
-import multiprocessing
 from typing import Dict, Optional
+
+from ..isolated import run_isolated
 
 
 class TimeoutException(Exception):
@@ -86,24 +87,13 @@ def check_mbpp_correctness(
     Returns:
         Dict with 'task_id', 'passed' (bool), 'result' (str), 'completion_id'.
     """
-    manager = multiprocessing.Manager()
-    result = manager.list()
-
-    p = multiprocessing.Process(
-        target=unsafe_execute_mbpp, args=(problem, completion, timeout, result)
-    )
-    p.start()
-    p.join(timeout=timeout + 1)
-    if p.is_alive():
-        p.kill()
-
-    if not result:
-        result.append("timed out")
+    # Reproduction change: a fresh interpreter instead of multiprocessing, see isolated.py
+    result = run_isolated(f"{__name__}:unsafe_execute_mbpp", [problem, completion, timeout], timeout)
 
     return {
         "task_id": problem["task_id"],
-        "passed": result[0] == "passed",
-        "result": result[0],
+        "passed": result == "passed",
+        "result": result,
         "completion_id": completion_id,
     }
 

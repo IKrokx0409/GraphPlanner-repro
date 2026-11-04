@@ -13,12 +13,13 @@ destructive actions on the host or network.
 import contextlib
 import faulthandler
 import io
-import multiprocessing
 import os
 import platform
 import signal
 import tempfile
 from typing import Dict, Optional
+
+from ..isolated import run_isolated
 
 
 def unsafe_execute(problem: Dict, completion: str, timeout: float, result):
@@ -84,22 +85,13 @@ def check_correctness(
     Returns:
         Dict with task_id, passed (bool), result message, and completion_id.
     """
-    manager = multiprocessing.Manager()
-    result = manager.list()
-
-    p = multiprocessing.Process(target=unsafe_execute, args=(problem, completion, timeout, result))
-    p.start()
-    p.join(timeout=timeout + 1)
-    if p.is_alive():
-        p.kill()
-
-    if not result:
-        result.append("timed out")
+    # Reproduction change: a fresh interpreter instead of multiprocessing, see isolated.py
+    result = run_isolated(f"{__name__}:unsafe_execute", [problem, completion, timeout], timeout)
 
     return dict(
         task_id=problem["task_id"],
-        passed=result[0] == "passed",
-        result=result[0],
+        passed=result == "passed",
+        result=result,
         completion_id=completion_id,
     )
 

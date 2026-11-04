@@ -195,7 +195,8 @@ def test_agent_on_dataset_subprocess(request):
 
     return (episode_reward, t + 1, episode_cost, test_env.current_query["task_name"],
             test_env.last_utility, list(test_env.execution_path),
-            test_env.root_node.get("response"), str(test_env.current_query["gt"]))
+            test_env.root_node.get("response"), str(test_env.current_query["gt"]),
+            test_env.current_query["query"])
 
 
 # Domain grouping used in the paper's tables
@@ -325,6 +326,7 @@ def test_agent_on_dataset(agent, test_query_file, llm_file, agent_file, max_plan
                 "path": res[5],
                 "response": res[6],
                 "gt": res[7],
+                "query": res[8],  # identifies the query (results arrive unordered within a batch)
             })
 
         del test_envs
@@ -460,11 +462,14 @@ def train_ppo(query_file, llm_file, agent_file, test_query_file=None,
               batch_size=1, test_batch_size=1, test_before_train=True,
               save_dir="./checkpoints", load_best_model_path=None,
               force_planner_episodes=50, gnn_backbone="dblayer",
-              cost_alpha=0.0, no_history=False, inductive_test=False):
+              cost_alpha=0.0, no_history=False, inductive_test=False,
+              resume=False, checkpoint_every=25):
     """Train PPO agent with flexible architecture and planner call limit.
 
     no_history: "w/o History" ablation -- the historical memory graph stays empty.
     inductive_test: evaluate with an empty historical memory instead of the training one.
+    resume: continue from {experiment_name}_resume.pt in save_dir if it exists.
+    checkpoint_every: write that training state every this many episodes.
     """
 
     # Create save directory
@@ -590,6 +595,57 @@ def train_ppo(query_file, llm_file, agent_file, test_query_file=None,
     running_reward = 0
     timestep = 0
     first_training_done = False
+    start_episode = 0
+
+    # Reproduction addition: full training state for resuming after the machine shuts down.
+    # Restoring the RNG states as well makes the resumed run continue exactly as the
+    # uninterrupted one would (answers already paid for come from the response cache).
+    resume_path = os.path.join(save_dir, f"{experiment_name}_resume.pt")
+
+    def save_training_state(next_episode):
+        state = {
+            "next_episode": next_episode,
+            "running_reward": running_reward,
+            "best_running_reward": best_running_reward,
+            "first_training_done": first_training_done,
+            "episode_rewards": episode_rewards,
+            "global_query_id_embed": global_query_id_embed,
+            "global_LLM_role_id_embed": global_LLM_role_id_embed,
+            "policy": agent.policy.state_dict(),
+            "value": agent.value.state_dict(),
+            "policy_old": agent.policy_old.state_dict(),
+            "policy_optimizer": agent.policy_optimizer.state_dict(),
+            "value_optimizer": agent.value_optimizer.state_dict(),
+            "buffer": list(agent.buffer),
+            "memory": his_memory_table.his_memory_table,
+            "rng": (random.getstate(), np.random.get_state(), torch.get_rng_state()),
+        }
+        tmp = resume_path + ".tmp"
+        torch.save(state, tmp)
+        os.replace(tmp, resume_path)  # atomic, so a shutdown mid-write keeps the previous state
+
+    if resume and os.path.exists(resume_path):
+        state = torch.load(resume_path, weights_only=False)
+        start_episode = state["next_episode"]
+        running_reward = state["running_reward"]
+        best_running_reward = state["best_running_reward"]
+        first_training_done = state["first_training_done"]
+        episode_rewards = state["episode_rewards"]
+        global_query_id_embed = state["global_query_id_embed"]
+        global_LLM_role_id_embed = state["global_LLM_role_id_embed"]
+        agent.policy.load_state_dict(state["policy"])
+        agent.value.load_state_dict(state["value"])
+        agent.policy_old.load_state_dict(state["policy_old"])
+        agent.policy_optimizer.load_state_dict(state["policy_optimizer"])
+        agent.value_optimizer.load_state_dict(state["value_optimizer"])
+        agent.buffer.extend(state["buffer"])
+        his_memory_table.his_memory_table = state["memory"]
+        py_rng, np_rng, torch_rng = state["rng"]
+        random.setstate(py_rng)
+        np.random.set_state(np_rng)
+        torch.set_rng_state(torch_rng)
+        print(f"Resumed from {resume_path} at episode {start_episode} "
+              f"(memory {his_memory_table.get_size()}, running reward {running_reward:.3f})")
 
     print(f"Starting PPO training with flexible architecture")
     print(f"Max planner calls allowed: {max_planner_calls}")
@@ -660,7 +716,7 @@ def train_ppo(query_file, llm_file, agent_file, test_query_file=None,
 
         return avg_episode_entropy, reward, avg_episode_length
 
-    for episode in range(max_episodes):
+    for episode in range(start_episode, max_episodes):
         episode_start_time = time.time()
 
         # Determine if this episode should force planner first
@@ -761,12 +817,17 @@ def train_ppo(query_file, llm_file, agent_file, test_query_file=None,
 
         log_dict["api_calls"] = API_STATS["calls"]
         log_dict["api_failures"] = API_STATS["failures"]
+        log_dict["api_cache_hits"] = API_STATS["cache_hits"]
+        log_dict["api_usd"] = API_STATS["usd"]
 
         wandb.log(log_dict)
 
+        if (episode + 1) % checkpoint_every == 0:
+            save_training_state(episode + 1)
+
         if episode % 100 == 0:
             print(
-                f"Episode {episode}, Reward: {episode_reward:.2f}, Running: {running_reward:.2f}, Best: {best_running_reward:.2f}, Memory: {his_memory_table.get_size()}, Force Planner: {force_planner_first}, API calls: {API_STATS['calls']} (failed {API_STATS['failures']})")
+                f"Episode {episode}, Reward: {episode_reward:.2f}, Running: {running_reward:.2f}, Best: {best_running_reward:.2f}, Memory: {his_memory_table.get_size()}, Force Planner: {force_planner_first}, API calls: {API_STATS['calls']} (failed {API_STATS['failures']}, cached {API_STATS['cache_hits']}), spent ${API_STATS['usd']:.3f}")
 
         if running_reward > 10:
             print(f"Problem solved! Episode {episode}")
@@ -838,6 +899,12 @@ def parse_args():
                         help="w/o History ablation: never write to the historical memory graph")
     parser.add_argument("--inductive_test", action="store_true",
                         help="Evaluate with an empty historical memory (inductive) instead of the training memory")
+    parser.add_argument("--resume", action="store_true",
+                        help="continue from <save_dir>/<experiment_name>_resume.pt if it exists")
+    parser.add_argument("--checkpoint_every", type=int, default=25,
+                        help="episodes between full training-state checkpoints (for --resume)")
+    parser.add_argument("--seed", type=int, default=None,
+                        help="Seed for query sampling and the policy (unseeded if omitted, as released)")
 
     return parser.parse_args()
 
@@ -922,6 +989,12 @@ def main():
         print(f"  {arg}: {value}")
     print("-" * 50)
 
+    if args.seed is not None:
+        # Env_route samples training queries with pandas (global numpy RNG); actions use torch
+        random.seed(args.seed)
+        np.random.seed(args.seed)
+        torch.manual_seed(args.seed)
+
     agent, rewards, best_model_path, best_memory_path = train_ppo(
         query_file=args.query_file,
         llm_file=args.llm_file,
@@ -945,7 +1018,9 @@ def main():
         gnn_backbone=args.gnn_backbone,
         cost_alpha=args.cost_alpha,
         no_history=args.no_history,
-        inductive_test=args.inductive_test
+        inductive_test=args.inductive_test,
+        resume=args.resume,
+        checkpoint_every=args.checkpoint_every
     )
 
     print(f"\nBest model can be loaded using:")
