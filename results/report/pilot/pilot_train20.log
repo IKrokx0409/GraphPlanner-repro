@@ -1,0 +1,172 @@
+wandb: Tracking run with wandb version 0.30.0
+wandb: W&B syncing is set to `offline` in this directory. Run `wandb online` or set WANDB_MODE=online to enable cloud syncing.
+wandb: Run data is saved locally in /home/ikrokx0409/projects/GraphPlanner/code/wandb/offline-run-20261102_094655-5ls2cw77
+wandb: View this run in the terminal with `wandb leet`
+wandb: Detected [openai] in use.
+wandb: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+wandb: For more information, check out the docs at: https://weave-docs.wandb.ai
+Using device: cpu
+Training parameters:
+  query_file: data/router_data_train_clean.csv
+  llm_file: config/llm_repro_phase2.json
+  agent_file: config/agent_roles_with_embeddings.json
+  test_query_file: data/router_data_test_small.csv
+  max_planner_calls: 2
+  embed_dim: 16
+  max_episodes: 20
+  max_timesteps: 500
+  update_timestep: 2000
+  batch_size: 1
+  test_batch_size: 20
+  test_before_train: 0
+  test_every_n_episodes: 100000
+  wandb_project: router_planner_flexible
+  experiment_name: pilot
+  gpu_id: 1
+  save_dir: /tmp/claude-1000/-home-ikrokx0409-projects-GraphPlanner/98342a1f-3fde-492b-ab69-2bbc2bfc792b/scratchpad/ckpt_pilot
+  load_best_model_path: None
+  force_planner_episodes: 0
+  gnn_backbone: dblayer
+  cost_alpha: 0.0
+  no_history: False
+  inductive_test: False
+  seed: 0
+--------------------------------------------------
+Best model will be saved to: /tmp/claude-1000/-home-ikrokx0409-projects-GraphPlanner/98342a1f-3fde-492b-ab69-2bbc2bfc792b/scratchpad/ckpt_pilot/pilot_best_model.pth
+Best memory will be saved to: /tmp/claude-1000/-home-ikrokx0409-projects-GraphPlanner/98342a1f-3fde-492b-ab69-2bbc2bfc792b/scratchpad/ckpt_pilot/pilot_best_memory.pkl
+Latest model will be saved to: /tmp/claude-1000/-home-ikrokx0409-projects-GraphPlanner/98342a1f-3fde-492b-ab69-2bbc2bfc792b/scratchpad/ckpt_pilot/pilot_latest_model.pth
+Latest memory will be saved to: /tmp/claude-1000/-home-ikrokx0409-projects-GraphPlanner/98342a1f-3fde-492b-ab69-2bbc2bfc792b/scratchpad/ckpt_pilot/pilot_latest_memory.pkl
+Starting PPO training with flexible architecture
+Max planner calls allowed: 2
+Force planner episodes: 0
+Device: cpu
+Initial memory table size: 0
+--------------------------------------------------
+Processing:   0%|          | 0/1 [00:00<?, ?it/s]Input ids are automatically padded to be a multiple of `config.attention_window`: 512
+/home/ikrokx0409/projects/GraphPlanner/code/router_planner/dynamic_router/route_env.py:600: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  out_emb = torch.tensor(self.embedding_model.get_embedding(response),
+Processing: 100%|██████████| 1/1 [00:02<00:00,  2.62s/it]Processing: 100%|██████████| 1/1 [00:02<00:00,  2.63s/it]
+Memory table saved to: /tmp/claude-1000/-home-ikrokx0409-projects-GraphPlanner/98342a1f-3fde-492b-ab69-2bbc2bfc792b/scratchpad/ckpt_pilot/pilot_best_memory.pkl
+New best running reward: 0.0500 - Model and memory saved!
+Episode 0, Reward: 1.00, Running: 0.05, Best: 0.05, Memory: 1, Force Planner: False, API calls: 1 (failed 0, cached 0), spent $0.000
+Processing:   0%|          | 0/1 [00:00<?, ?it/s]Token indices sequence length is longer than the specified maximum sequence length for this model (1172 > 1024). Running this sequence through the model will result in indexing errors
+/home/ikrokx0409/projects/GraphPlanner/code/router_planner/dynamic_router/route_env.py:515: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  out_emb = torch.tensor(self.embedding_model.get_embedding(sub_queries_str), dtype=torch.float32).to(self.device)
+/home/ikrokx0409/projects/GraphPlanner/code/router_planner/dynamic_router/route_env.py:528: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  self.state = torch.tensor(
+/home/ikrokx0409/projects/GraphPlanner/code/router_planner/dynamic_router/route_env.py:283: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  return torch.tensor(
+/home/ikrokx0409/projects/GraphPlanner/code/router_planner/dynamic_router/route_env.py:293: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  return torch.tensor(
+/home/ikrokx0409/projects/GraphPlanner/code/router_planner/dynamic_router/route_env.py:668: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  out_emb = torch.tensor(self.embedding_model.get_embedding(summary),
+Processing: 100%|██████████| 1/1 [00:41<00:00, 41.33s/it]Processing: 100%|██████████| 1/1 [00:41<00:00, 41.33s/it]
+Memory table saved to: /tmp/claude-1000/-home-ikrokx0409-projects-GraphPlanner/98342a1f-3fde-492b-ab69-2bbc2bfc792b/scratchpad/ckpt_pilot/pilot_best_memory.pkl
+New best running reward: 0.0975 - Model and memory saved!
+Processing:   0%|          | 0/1 [00:00<?, ?it/s]Processing: 100%|██████████| 1/1 [00:03<00:00,  3.01s/it]Processing: 100%|██████████| 1/1 [00:03<00:00,  3.01s/it]
+Memory table saved to: /tmp/claude-1000/-home-ikrokx0409-projects-GraphPlanner/98342a1f-3fde-492b-ab69-2bbc2bfc792b/scratchpad/ckpt_pilot/pilot_best_memory.pkl
+New best running reward: 0.1426 - Model and memory saved!
+Processing:   0%|          | 0/1 [00:00<?, ?it/s]Processing: 100%|██████████| 1/1 [00:41<00:00, 41.88s/it]Processing: 100%|██████████| 1/1 [00:41<00:00, 41.88s/it]
+Memory table saved to: /tmp/claude-1000/-home-ikrokx0409-projects-GraphPlanner/98342a1f-3fde-492b-ab69-2bbc2bfc792b/scratchpad/ckpt_pilot/pilot_best_memory.pkl
+New best running reward: 0.1855 - Model and memory saved!
+Processing:   0%|          | 0/1 [00:00<?, ?it/s]Processing: 100%|██████████| 1/1 [00:24<00:00, 24.35s/it]Processing: 100%|██████████| 1/1 [00:24<00:00, 24.35s/it]
+Memory table saved to: /tmp/claude-1000/-home-ikrokx0409-projects-GraphPlanner/98342a1f-3fde-492b-ab69-2bbc2bfc792b/scratchpad/ckpt_pilot/pilot_best_memory.pkl
+New best running reward: 0.2262 - Model and memory saved!
+Processing:   0%|          | 0/1 [00:00<?, ?it/s]Processing: 100%|██████████| 1/1 [00:01<00:00,  1.83s/it]Processing: 100%|██████████| 1/1 [00:01<00:00,  1.83s/it]
+Processing:   0%|          | 0/1 [00:00<?, ?it/s]Processing: 100%|██████████| 1/1 [00:33<00:00, 33.35s/it]Processing: 100%|██████████| 1/1 [00:33<00:00, 33.35s/it]
+Memory table saved to: /tmp/claude-1000/-home-ikrokx0409-projects-GraphPlanner/98342a1f-3fde-492b-ab69-2bbc2bfc792b/scratchpad/ckpt_pilot/pilot_best_memory.pkl
+New best running reward: 0.2542 - Model and memory saved!
+Processing:   0%|          | 0/1 [00:00<?, ?it/s]Processing: 100%|██████████| 1/1 [00:29<00:00, 29.32s/it]Processing: 100%|██████████| 1/1 [00:29<00:00, 29.32s/it]
+Processing:   0%|          | 0/1 [00:00<?, ?it/s]Processing: 100%|██████████| 1/1 [00:01<00:00,  1.96s/it]Processing: 100%|██████████| 1/1 [00:01<00:00,  1.96s/it]
+Memory table saved to: /tmp/claude-1000/-home-ikrokx0409-projects-GraphPlanner/98342a1f-3fde-492b-ab69-2bbc2bfc792b/scratchpad/ckpt_pilot/pilot_best_memory.pkl
+New best running reward: 0.2794 - Model and memory saved!
+Processing:   0%|          | 0/1 [00:00<?, ?it/s]Processing: 100%|██████████| 1/1 [00:30<00:00, 30.86s/it]Processing: 100%|██████████| 1/1 [00:30<00:00, 30.86s/it]
+Episode 9: Buffer is full (first training)
+Memory table saved to: /tmp/claude-1000/-home-ikrokx0409-projects-GraphPlanner/98342a1f-3fde-492b-ab69-2bbc2bfc792b/scratchpad/ckpt_pilot/pilot_best_memory.pkl
+New best running reward: 0.3154 - Model and memory saved!
+Processing:   0%|          | 0/1 [00:00<?, ?it/s]Processing: 100%|██████████| 1/1 [10:09<00:00, 609.77s/it]Processing: 100%|██████████| 1/1 [10:09<00:00, 609.78s/it]
+API unreachable for model mistralai/Mistral-Small-24B-Instruct-2501 (APIConnectionError: Connection error.); waited 0s so far, retrying in 9s
+API unreachable for model mistralai/Mistral-Small-24B-Instruct-2501 (APIConnectionError: Connection error.); waited 9s so far, retrying in 9s
+API unreachable for model mistralai/Mistral-Small-24B-Instruct-2501 (APIConnectionError: Connection error.); waited 17s so far, retrying in 8s
+API unreachable for model mistralai/Mistral-Small-24B-Instruct-2501 (APIConnectionError: Connection error.); waited 26s so far, retrying in 8s
+API unreachable for model mistralai/Mistral-Small-24B-Instruct-2501 (APIConnectionError: Connection error.); waited 34s so far, retrying in 9s
+API unreachable for model mistralai/Mistral-Small-24B-Instruct-2501 (APIConnectionError: Connection error.); waited 43s so far, retrying in 7s
+API unreachable for model mistralai/Mistral-Small-24B-Instruct-2501 (APIConnectionError: Connection error.); waited 49s so far, retrying in 9s
+API unreachable for model mistralai/Mistral-Small-24B-Instruct-2501 (APIConnectionError: Connection error.); waited 58s so far, retrying in 9s
+API unreachable for model mistralai/Mistral-Small-24B-Instruct-2501 (APIConnectionError: Connection error.); waited 67s so far, retrying in 10s
+API unreachable for model mistralai/Mistral-Small-24B-Instruct-2501 (APIConnectionError: Connection error.); waited 77s so far, retrying in 15s
+API unreachable for model mistralai/Mistral-Small-24B-Instruct-2501 (APIConnectionError: Connection error.); waited 92s so far, retrying in 11s
+API unreachable for model mistralai/Mistral-Small-24B-Instruct-2501 (APIConnectionError: Connection error.); waited 103s so far, retrying in 14s
+API unreachable for model mistralai/Mistral-Small-24B-Instruct-2501 (APIConnectionError: Connection error.); waited 117s so far, retrying in 11s
+API unreachable for model mistralai/Mistral-Small-24B-Instruct-2501 (APIConnectionError: Connection error.); waited 127s so far, retrying in 23s
+API unreachable for model mistralai/Mistral-Small-24B-Instruct-2501 (APIConnectionError: Connection error.); waited 150s so far, retrying in 20s
+API unreachable for model mistralai/Mistral-Small-24B-Instruct-2501 (APIConnectionError: Connection error.); waited 171s so far, retrying in 25s
+API unreachable for model mistralai/Mistral-Small-24B-Instruct-2501 (APIConnectionError: Connection error.); waited 196s so far, retrying in 44s
+API unreachable for model mistralai/Mistral-Small-24B-Instruct-2501 (APIConnectionError: Connection error.); waited 240s so far, retrying in 45s
+API unreachable for model mistralai/Mistral-Small-24B-Instruct-2501 (APIConnectionError: Connection error.); waited 285s so far, retrying in 62s
+API unreachable for model mistralai/Mistral-Small-24B-Instruct-2501 (APIConnectionError: Connection error.); waited 347s so far, retrying in 62s
+Memory table saved to: /tmp/claude-1000/-home-ikrokx0409-projects-GraphPlanner/98342a1f-3fde-492b-ab69-2bbc2bfc792b/scratchpad/ckpt_pilot/pilot_best_memory.pkl
+New best running reward: 0.3496 - Model and memory saved!
+Processing:   0%|          | 0/1 [00:00<?, ?it/s]Processing: 100%|██████████| 1/1 [00:28<00:00, 28.47s/it]Processing: 100%|██████████| 1/1 [00:28<00:00, 28.47s/it]
+Processing:   0%|          | 0/1 [00:00<?, ?it/s]Processing: 100%|██████████| 1/1 [01:35<00:00, 95.55s/it]Processing: 100%|██████████| 1/1 [01:35<00:00, 95.55s/it]
+Episode 12: Scheduled training
+Processing:   0%|          | 0/1 [00:00<?, ?it/s]Processing: 100%|██████████| 1/1 [00:26<00:00, 26.62s/it]Processing: 100%|██████████| 1/1 [00:26<00:00, 26.62s/it]
+Processing:   0%|          | 0/1 [00:00<?, ?it/s]Processing: 100%|██████████| 1/1 [00:19<00:00, 19.96s/it]Processing: 100%|██████████| 1/1 [00:19<00:00, 19.97s/it]
+Processing:   0%|          | 0/1 [00:00<?, ?it/s]Processing: 100%|██████████| 1/1 [00:25<00:00, 25.30s/it]Processing: 100%|██████████| 1/1 [00:25<00:00, 25.30s/it]
+Episode 15: Scheduled training
+Memory table saved to: /tmp/claude-1000/-home-ikrokx0409-projects-GraphPlanner/98342a1f-3fde-492b-ab69-2bbc2bfc792b/scratchpad/ckpt_pilot/pilot_best_memory.pkl
+New best running reward: 0.3680 - Model and memory saved!
+Processing:   0%|          | 0/1 [00:00<?, ?it/s]Processing: 100%|██████████| 1/1 [00:04<00:00,  4.51s/it]Processing: 100%|██████████| 1/1 [00:04<00:00,  4.51s/it]
+Memory table saved to: /tmp/claude-1000/-home-ikrokx0409-projects-GraphPlanner/98342a1f-3fde-492b-ab69-2bbc2bfc792b/scratchpad/ckpt_pilot/pilot_best_memory.pkl
+New best running reward: 0.3996 - Model and memory saved!
+Processing:   0%|          | 0/1 [00:00<?, ?it/s]Processing: 100%|██████████| 1/1 [01:33<00:00, 93.20s/it]Processing: 100%|██████████| 1/1 [01:33<00:00, 93.20s/it]
+Processing:   0%|          | 0/1 [00:00<?, ?it/s]Processing: 100%|██████████| 1/1 [00:09<00:00,  9.39s/it]Processing: 100%|██████████| 1/1 [00:09<00:00,  9.39s/it]
+Episode 18: Scheduled training
+Processing:   0%|          | 0/1 [00:00<?, ?it/s]Processing: 100%|██████████| 1/1 [00:21<00:00, 21.81s/it]Processing: 100%|██████████| 1/1 [00:21<00:00, 21.81s/it]
+wandb: 
+wandb: Run history:
+wandb:      api_cache_hits ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+wandb:           api_calls ▁▂▂▂▃▃▄▄▄▄▅▅▆▆▆▇▇▇▇█
+wandb:        api_failures ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+wandb:             api_usd ▁▂▂▃▃▃▃▃▄▄▅▅▆▆▆▇▇███
+wandb:  best_model_episode ▁▁▂▂▃▄▅▅▅██
+wandb: best_running_reward ▁▁▂▂▃▃▄▄▅▅▅▅▅▅▆▆▆▆▇▇▇▇▇▇▇▇█████
+wandb:         buffer_size ▁▂▃▄▅▅▇▇▇███████████
+wandb:             episode ▁▁▂▂▂▃▃▄▄▄▅▅▅▆▆▇▇▇██
+wandb:    episode_duration ▁▁▁▁▁▁▁▁▁▁█▁▂▁▁▁▁▂▁▁
+wandb:     episode_entropy █▁▇▂▁▇▂██▃▃▃▂██▃▇▂█▃
+wandb:                  +7 ...
+wandb: 
+wandb: Run summary:
+wandb:      api_cache_hits 0
+wandb:           api_calls 110
+wandb:        api_failures 0
+wandb:             api_usd 0.00466
+wandb:  best_model_episode 16
+wandb: best_running_reward 0.39964
+wandb:         buffer_size 50
+wandb:             episode 19
+wandb:    episode_duration 21.83449
+wandb:     episode_entropy 1.5504
+wandb:                  +9 ...
+wandb: 
+wandb: You can sync this run to the cloud by running:
+wandb: wandb sync /home/ikrokx0409/projects/GraphPlanner/code/wandb/offline-run-20261102_094655-5ls2cw77
+wandb: Find logs at: ./wandb/offline-run-20261102_094655-5ls2cw77/logs
+Memory table saved to: /tmp/claude-1000/-home-ikrokx0409-projects-GraphPlanner/98342a1f-3fde-492b-ab69-2bbc2bfc792b/scratchpad/ckpt_pilot/pilot_final_memory.pkl
+Final training model saved to: /tmp/claude-1000/-home-ikrokx0409-projects-GraphPlanner/98342a1f-3fde-492b-ab69-2bbc2bfc792b/scratchpad/ckpt_pilot/pilot_final_model.pth
+Final training memory saved to: /tmp/claude-1000/-home-ikrokx0409-projects-GraphPlanner/98342a1f-3fde-492b-ab69-2bbc2bfc792b/scratchpad/ckpt_pilot/pilot_final_memory.pkl
+
+Training completed:
+Best running reward achieved: 0.3996
+Best model saved at: /tmp/claude-1000/-home-ikrokx0409-projects-GraphPlanner/98342a1f-3fde-492b-ab69-2bbc2bfc792b/scratchpad/ckpt_pilot/pilot_best_model.pth
+Best memory saved at: /tmp/claude-1000/-home-ikrokx0409-projects-GraphPlanner/98342a1f-3fde-492b-ab69-2bbc2bfc792b/scratchpad/ckpt_pilot/pilot_best_memory.pkl
+Latest model saved at: /tmp/claude-1000/-home-ikrokx0409-projects-GraphPlanner/98342a1f-3fde-492b-ab69-2bbc2bfc792b/scratchpad/ckpt_pilot/pilot_latest_model.pth
+Latest memory saved at: /tmp/claude-1000/-home-ikrokx0409-projects-GraphPlanner/98342a1f-3fde-492b-ab69-2bbc2bfc792b/scratchpad/ckpt_pilot/pilot_latest_memory.pkl
+Final model saved at: /tmp/claude-1000/-home-ikrokx0409-projects-GraphPlanner/98342a1f-3fde-492b-ab69-2bbc2bfc792b/scratchpad/ckpt_pilot/pilot_final_model.pth
+Final memory saved at: /tmp/claude-1000/-home-ikrokx0409-projects-GraphPlanner/98342a1f-3fde-492b-ab69-2bbc2bfc792b/scratchpad/ckpt_pilot/pilot_final_memory.pkl
+Final memory table size: 110
+
+Best model can be loaded using:
+best_agent = load_best_model('/tmp/claude-1000/-home-ikrokx0409-projects-GraphPlanner/98342a1f-3fde-492b-ab69-2bbc2bfc792b/scratchpad/ckpt_pilot/pilot_best_model.pth')
+best_agent, memory_table = load_best_model_with_memory('/tmp/claude-1000/-home-ikrokx0409-projects-GraphPlanner/98342a1f-3fde-492b-ab69-2bbc2bfc792b/scratchpad/ckpt_pilot/pilot_best_model.pth')

@@ -1,0 +1,90 @@
+Using device: cpu
+Testing on 44 samples from test dataset...
+Testing Batches:   0%|          | 0/11 [00:00<?, ?it/s]
+Processing:   0%|                                                             | 0/4 [00:00<?, ?it/s][AInput ids are automatically padded to be a multiple of `config.attention_window`: 512
+/home/ikrokx0409/projects/GraphPlanner/code/router_planner/dynamic_router/route_env.py:600: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  out_emb = torch.tensor(self.embedding_model.get_embedding(response),
+
+Processing:  25%|█████████████▎                                       | 1/4 [00:02<00:06,  2.00s/it][A/home/ikrokx0409/projects/GraphPlanner/code/router_planner/dynamic_router/route_env.py:515: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  out_emb = torch.tensor(self.embedding_model.get_embedding(sub_queries_str), dtype=torch.float32).to(self.device)
+/home/ikrokx0409/projects/GraphPlanner/code/router_planner/dynamic_router/route_env.py:528: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  self.state = torch.tensor(
+
+Processing:  50%|██████████████████████████▌                          | 2/4 [00:06<00:06,  3.50s/it][A
+Processing:  75%|███████████████████████████████████████▊             | 3/4 [00:09<00:03,  3.25s/it][A/home/ikrokx0409/projects/GraphPlanner/code/router_planner/dynamic_router/route_env.py:283: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  return torch.tensor(
+/home/ikrokx0409/projects/GraphPlanner/code/router_planner/dynamic_router/route_env.py:293: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  return torch.tensor(
+/home/ikrokx0409/projects/GraphPlanner/code/router_planner/dynamic_router/route_env.py:668: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  out_emb = torch.tensor(self.embedding_model.get_embedding(summary),
+
+Processing: 100%|█████████████████████████████████████████████████████| 4/4 [00:46<00:00, 16.48s/it][AProcessing: 100%|█████████████████████████████████████████████████████| 4/4 [00:46<00:00, 11.57s/it]
+Testing Batches:   9%|▉         | 1/11 [00:46<07:46, 46.64s/it]
+Processing:   0%|                                                             | 0/4 [00:00<?, ?it/s][A
+Processing:  25%|█████████████▎                                       | 1/4 [00:03<00:09,  3.11s/it][A
+Processing:  50%|██████████████████████████▌                          | 2/4 [00:03<00:03,  1.62s/it][A
+Processing: 100%|█████████████████████████████████████████████████████| 4/4 [00:04<00:00,  1.06it/s][AProcessing: 100%|█████████████████████████████████████████████████████| 4/4 [00:04<00:00,  1.19s/it]
+Testing Batches:  18%|█▊        | 2/11 [00:51<03:19, 22.15s/it]
+Processing:   0%|                                                             | 0/4 [00:00<?, ?it/s][A
+Processing:  25%|█████████████▎                                       | 1/4 [00:06<00:20,  7.00s/it][A
+Processing:  50%|██████████████████████████▌                          | 2/4 [00:08<00:07,  3.89s/it][A
+Processing:  75%|███████████████████████████████████████▊             | 3/4 [00:11<00:03,  3.48s/it][A
+Processing: 100%|█████████████████████████████████████████████████████| 4/4 [00:53<00:00, 18.52s/it][AProcessing: 100%|█████████████████████████████████████████████████████| 4/4 [00:53<00:00, 13.32s/it]
+Testing Batches:  27%|██▋       | 3/11 [01:45<04:51, 36.45s/it]
+Processing:   0%|                                                             | 0/4 [00:00<?, ?it/s][A
+Processing:  25%|█████████████▎                                       | 1/4 [00:08<00:25,  8.58s/it][A
+Processing:  50%|██████████████████████████▌                          | 2/4 [00:09<00:07,  3.81s/it][A
+Processing:  75%|███████████████████████████████████████▊             | 3/4 [00:34<00:13, 13.86s/it][A
+Processing: 100%|█████████████████████████████████████████████████████| 4/4 [00:48<00:00, 13.60s/it][AProcessing: 100%|█████████████████████████████████████████████████████| 4/4 [00:48<00:00, 12.02s/it]
+Testing Batches:  36%|███▋      | 4/11 [02:33<04:47, 41.12s/it]
+Processing:   0%|                                                             | 0/4 [00:00<?, ?it/s][A
+Processing:  25%|█████████████▎                                       | 1/4 [00:03<00:10,  3.61s/it][A
+Processing:  50%|██████████████████████████▌                          | 2/4 [00:05<00:05,  2.67s/it][AToken indices sequence length is longer than the specified maximum sequence length for this model (1098 > 1024). Running this sequence through the model will result in indexing errors
+
+Processing:  75%|███████████████████████████████████████▊             | 3/4 [00:39<00:17, 17.06s/it][A
+Processing: 100%|█████████████████████████████████████████████████████| 4/4 [01:18<00:00, 25.51s/it][AProcessing: 100%|█████████████████████████████████████████████████████| 4/4 [01:18<00:00, 19.56s/it]
+Testing Batches:  45%|████▌     | 5/11 [03:51<05:27, 54.62s/it]
+Processing:   0%|                                                             | 0/4 [00:00<?, ?it/s][A
+Processing:  25%|█████████████▎                                       | 1/4 [00:02<00:07,  2.61s/it][A
+Processing:  50%|██████████████████████████▌                          | 2/4 [00:09<00:10,  5.15s/it][A
+Processing:  75%|███████████████████████████████████████▊             | 3/4 [00:19<00:07,  7.27s/it][A
+Processing: 100%|█████████████████████████████████████████████████████| 4/4 [00:21<00:00,  5.17s/it][AProcessing: 100%|█████████████████████████████████████████████████████| 4/4 [00:21<00:00,  5.32s/it]
+Testing Batches:  55%|█████▍    | 6/11 [04:13<03:36, 43.36s/it]
+Processing:   0%|                                                             | 0/4 [00:00<?, ?it/s][A
+Processing:  25%|█████████████▎                                       | 1/4 [00:41<02:05, 41.78s/it][A
+Processing:  50%|██████████████████████████▌                          | 2/4 [01:00<00:57, 28.51s/it][A
+Processing:  75%|███████████████████████████████████████▊             | 3/4 [01:17<00:22, 22.99s/it][A
+Processing: 100%|█████████████████████████████████████████████████████| 4/4 [01:27<00:00, 17.72s/it][AProcessing: 100%|█████████████████████████████████████████████████████| 4/4 [01:27<00:00, 21.77s/it]
+Testing Batches:  64%|██████▎   | 7/11 [05:40<03:50, 57.72s/it]
+Processing:   0%|                                                             | 0/4 [00:00<?, ?it/s][A
+Processing:  25%|█████████████▎                                       | 1/4 [00:07<00:22,  7.55s/it][A
+Processing:  50%|██████████████████████████▌                          | 2/4 [00:09<00:09,  4.51s/it][A
+Processing:  75%|███████████████████████████████████████▊             | 3/4 [00:39<00:16, 16.14s/it][A
+Processing: 100%|█████████████████████████████████████████████████████| 4/4 [00:41<00:00, 10.58s/it][AProcessing: 100%|█████████████████████████████████████████████████████| 4/4 [00:41<00:00, 10.49s/it]
+Testing Batches:  73%|███████▎  | 8/11 [06:22<02:38, 52.78s/it]
+Processing:   0%|                                                             | 0/4 [00:00<?, ?it/s][A
+Processing:  25%|█████████████▎                                       | 1/4 [00:02<00:06,  2.06s/it][A
+Processing:  50%|██████████████████████████▌                          | 2/4 [00:03<00:03,  1.52s/it][A
+Processing:  75%|███████████████████████████████████████▊             | 3/4 [00:14<00:05,  5.86s/it][A
+Processing: 100%|█████████████████████████████████████████████████████| 4/4 [01:02<00:00, 22.48s/it][AProcessing: 100%|█████████████████████████████████████████████████████| 4/4 [01:02<00:00, 15.55s/it]
+Testing Batches:  82%|████████▏ | 9/11 [07:25<01:51, 55.79s/it]
+Processing:   0%|                                                             | 0/4 [00:00<?, ?it/s][A
+Processing:  25%|█████████████▎                                       | 1/4 [00:03<00:11,  3.85s/it][A
+Processing:  50%|██████████████████████████▌                          | 2/4 [00:06<00:06,  3.09s/it][A
+Processing:  75%|███████████████████████████████████████▊             | 3/4 [01:13<00:32, 32.44s/it][A
+Processing: 100%|█████████████████████████████████████████████████████| 4/4 [01:55<00:00, 36.00s/it][AProcessing: 100%|█████████████████████████████████████████████████████| 4/4 [01:55<00:00, 28.81s/it]
+Testing Batches:  91%|█████████ | 10/11 [09:20<01:14, 74.20s/it]
+Processing:   0%|                                                             | 0/4 [00:00<?, ?it/s][A
+Processing:  25%|█████████████▎                                       | 1/4 [00:02<00:06,  2.28s/it][A
+Processing:  50%|██████████████████████████▌                          | 2/4 [00:03<00:03,  1.82s/it][A
+Processing:  75%|███████████████████████████████████████▊             | 3/4 [00:22<00:09,  9.39s/it][A
+Processing: 100%|█████████████████████████████████████████████████████| 4/4 [00:25<00:00,  7.02s/it][AProcessing: 100%|█████████████████████████████████████████████████████| 4/4 [00:25<00:00,  6.39s/it]
+Testing Batches: 100%|██████████| 11/11 [09:46<00:00, 59.39s/it]Testing Batches: 100%|██████████| 11/11 [09:46<00:00, 53.33s/it]
+Test details saved to: /tmp/claude-1000/-home-ikrokx0409-projects-GraphPlanner/98342a1f-3fde-492b-ab69-2bbc2bfc792b/scratchpad/pilot_random44.json
+
+Acc = 0.568  Avg cost = 902.7  Avg LLM calls = 3.98
+  CS       0.750
+  Code     0.625
+  Math     0.500
+  Popular  0.500
+  WK       0.375
