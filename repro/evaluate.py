@@ -19,6 +19,8 @@ Examples:
 """
 
 import argparse
+import faulthandler
+import signal
 import json
 import os
 
@@ -56,6 +58,8 @@ class FixedLLMPolicy:
 
 
 def main():
+    # `kill -USR1 <pid>` writes the stack of every thread to stderr, to diagnose hangs
+    faulthandler.register(signal.SIGUSR1, all_threads=True)
     parser = argparse.ArgumentParser()
     parser.add_argument("--policy", choices=["graphplanner", "fixed", "random"], required=True)
     parser.add_argument("--llm", help="LLM key for --policy fixed")

@@ -1,0 +1,146 @@
+{
+  "router_svm": {
+    "test_acc": 0.5017985611510791,
+    "test_avg_cost": 73.15179856115108,
+    "test_avg_llm_calls": 1.0,
+    "test_samples": 556,
+    "test_acc_domain/CS": 0.7133333333333334,
+    "test_cost_domain/CS": 30.684,
+    "test_acc_domain/Code": 0.65,
+    "test_cost_domain/Code": 130.474,
+    "test_acc_domain/Math": 0.49056603773584906,
+    "test_cost_domain/Math": 93.40566037735849,
+    "test_acc_domain/Popular": 0.25,
+    "test_cost_domain/Popular": 108.1,
+    "test_acc_domain/WK": 0.3,
+    "test_cost_domain/WK": 23.113999999999997,
+    "test_llm_share/llama-3.1-8b-instruct": 0.8920863309352518,
+    "test_llm_share/mistral-nemo-12b-instruct": 0.0539568345323741,
+    "test_llm_share/llama-3.3-70b-instruct": 0.0017985611510791368,
+    "test_llm_share/mistral-small-24b-instruct": 0.052158273381294966,
+    "params": {
+      "C": 10.0,
+      "gamma": 0.001
+    },
+    "cv": {
+      "{\"C\": 0.1, \"gamma\": \"scale\"}": 0.5010000000000001,
+      "{\"C\": 0.1, \"gamma\": 0.001}": 0.5010000000000001,
+      "{\"C\": 0.1, \"gamma\": 0.0001}": 0.5010000000000001,
+      "{\"C\": 1.0, \"gamma\": \"scale\"}": 0.502,
+      "{\"C\": 1.0, \"gamma\": 0.001}": 0.5010000000000001,
+      "{\"C\": 1.0, \"gamma\": 0.0001}": 0.5010000000000001,
+      "{\"C\": 10.0, \"gamma\": \"scale\"}": 0.518,
+      "{\"C\": 10.0, \"gamma\": 0.001}": 0.526,
+      "{\"C\": 10.0, \"gamma\": 0.0001}": 0.503
+    }
+  },
+  "router_mlp": {
+    "params": {
+      "hidden_layer_sizes": [
+        256
+      ],
+      "alpha": 0.0001
+    },
+    "cv": {
+      "{\"hidden_layer_sizes\": [64], \"alpha\": 0.0001}": 0.517,
+      "{\"hidden_layer_sizes\": [64], \"alpha\": 0.01}": 0.517,
+      "{\"hidden_layer_sizes\": [64], \"alpha\": 1.0}": 0.518,
+      "{\"hidden_layer_sizes\": [256], \"alpha\": 0.0001}": 0.526,
+      "{\"hidden_layer_sizes\": [256], \"alpha\": 0.01}": 0.526,
+      "{\"hidden_layer_sizes\": [256], \"alpha\": 1.0}": 0.524,
+      "{\"hidden_layer_sizes\": [256, 64], \"alpha\": 0.0001}": 0.515,
+      "{\"hidden_layer_sizes\": [256, 64], \"alpha\": 0.01}": 0.508,
+      "{\"hidden_layer_sizes\": [256, 64], \"alpha\": 1.0}": 0.509
+    },
+    "seeds": {
+      "0": {
+        "test_acc": 0.5053956834532374,
+        "test_avg_cost": 68.22338129496403,
+        "test_avg_llm_calls": 1.0,
+        "test_samples": 556,
+        "test_acc_domain/CS": 0.7133333333333334,
+        "test_cost_domain/CS": 30.836666666666666,
+        "test_acc_domain/Code": 0.65,
+        "test_cost_domain/Code": 128.03199999999998,
+        "test_acc_domain/Math": 0.4716981132075472,
+        "test_cost_domain/Math": 71.27641509433961,
+        "test_acc_domain/Popular": 0.27,
+        "test_cost_domain/Popular": 100.15699999999998,
+        "test_acc_domain/WK": 0.32,
+        "test_cost_domain/WK": 29.324999999999996,
+        "test_llm_share/llama-3.1-8b-instruct": 0.8830935251798561,
+        "test_llm_share/mistral-nemo-12b-instruct": 0.07014388489208633,
+        "test_llm_share/llama-3.3-70b-instruct": 0.00539568345323741,
+        "test_llm_share/mistral-small-24b-instruct": 0.04136690647482014
+      },
+      "1": {
+        "test_acc": 0.5,
+        "test_avg_cost": 60.22482014388489,
+        "test_avg_llm_calls": 1.0,
+        "test_samples": 556,
+        "test_acc_domain/CS": 0.72,
+        "test_cost_domain/CS": 30.807333333333336,
+        "test_acc_domain/Code": 0.62,
+        "test_cost_domain/Code": 81.06200000000001,
+        "test_acc_domain/Math": 0.5,
+        "test_cost_domain/Math": 62.39716981132075,
+        "test_acc_domain/Popular": 0.26,
+        "test_cost_domain/Popular": 113.663,
+        "test_acc_domain/WK": 0.29,
+        "test_cost_domain/WK": 27.772999999999996,
+        "test_llm_share/llama-3.1-8b-instruct": 0.935251798561151,
+        "test_llm_share/mistral-nemo-12b-instruct": 0.048561151079136694,
+        "test_llm_share/llama-3.3-70b-instruct": 0.012589928057553957,
+        "test_llm_share/mistral-small-24b-instruct": 0.0035971223021582736
+      },
+      "2": {
+        "test_acc": 0.4982014388489209,
+        "test_avg_cost": 80.27176258992806,
+        "test_avg_llm_calls": 1.0,
+        "test_samples": 556,
+        "test_acc_domain/CS": 0.7,
+        "test_cost_domain/CS": 32.35,
+        "test_acc_domain/Code": 0.65,
+        "test_cost_domain/Code": 132.49899999999997,
+        "test_acc_domain/Math": 0.5,
+        "test_cost_domain/Math": 107.19150943396228,
+        "test_acc_domain/Popular": 0.26,
+        "test_cost_domain/Popular": 124.79899999999998,
+        "test_acc_domain/WK": 0.28,
+        "test_cost_domain/WK": 26.865,
+        "test_llm_share/llama-3.1-8b-instruct": 0.8399280575539568,
+        "test_llm_share/mistral-nemo-12b-instruct": 0.08453237410071943,
+        "test_llm_share/llama-3.3-70b-instruct": 0.012589928057553957,
+        "test_llm_share/mistral-small-24b-instruct": 0.06294964028776978
+      }
+    },
+    "mean": {
+      "test_acc": 0.5011990407673861,
+      "test_avg_cost": 69.57332134292567,
+      "test_avg_llm_calls": 1.0,
+      "test_samples": 556.0,
+      "test_acc_domain/CS": 0.7111111111111111,
+      "test_cost_domain/CS": 31.331333333333333,
+      "test_acc_domain/Code": 0.64,
+      "test_cost_domain/Code": 113.86433333333332,
+      "test_acc_domain/Math": 0.4905660377358491,
+      "test_cost_domain/Math": 80.28836477987421,
+      "test_acc_domain/Popular": 0.26333333333333336,
+      "test_cost_domain/Popular": 112.87299999999999,
+      "test_acc_domain/WK": 0.2966666666666667,
+      "test_cost_domain/WK": 27.987666666666666,
+      "test_llm_share/llama-3.1-8b-instruct": 0.8860911270983213,
+      "test_llm_share/mistral-nemo-12b-instruct": 0.06774580335731416,
+      "test_llm_share/llama-3.3-70b-instruct": 0.010191846522781774,
+      "test_llm_share/mistral-small-24b-instruct": 0.03597122302158273
+    },
+    "std_acc": 0.0030569661352474542,
+    "std_cost": 8.239608767352967
+  },
+  "train_label_share": {
+    "llama-3.1-8b-instruct": 0.688,
+    "mistral-nemo-12b-instruct": 0.154,
+    "llama-3.3-70b-instruct": 0.05,
+    "mistral-small-24b-instruct": 0.108
+  }
+}

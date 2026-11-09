@@ -303,6 +303,7 @@ def model_prompting(
     max_token_num: Optional[int] = 512,
     temperature: Optional[float] = 0.1,
     top_p: Optional[float] = 0.7,
+    stop: Optional[List[str]] = None,
 ) -> str:
     """
     Send a prompt to an LLM via the NVIDIA API (OpenAI-compatible).
@@ -316,6 +317,7 @@ def model_prompting(
         max_token_num: Maximum tokens to generate.
         temperature: Sampling temperature.
         top_p: Nucleus sampling parameter.
+        stop: Optional stop sequences (not included in the returned text).
 
     Returns:
         Generated text response.
@@ -332,8 +334,11 @@ def model_prompting(
     if llm_model not in BILLING_PRICES:
         raise ValueError(f"No billing price registered for {llm_model}; add billing_*_price to the LLM config")
 
-    cache_key = ResponseCache.make_key(model=llm_model, prompt=prompt, max_tokens=max_token_num,
-                                       temperature=temperature, top_p=top_p, extra_body=options.get("extra_body"))
+    key_fields = dict(model=llm_model, prompt=prompt, max_tokens=max_token_num,
+                      temperature=temperature, top_p=top_p, extra_body=options.get("extra_body"))
+    if stop:  # only when set, so the keys of all earlier calls stay the same
+        key_fields["stop"] = list(stop)
+    cache_key = ResponseCache.make_key(**key_fields)
     cache = _response_cache()
     if cache is not None:
         cached = cache.get(cache_key)
@@ -368,6 +373,7 @@ def model_prompting(
                 top_p=top_p,
                 stream=False,
                 extra_body=options.get("extra_body"),
+                **({"stop": list(stop)} if stop else {}),
             )
         except (openai.APIConnectionError, openai.RateLimitError, openai.InternalServerError,
                 CallDeadlineExceeded) as e:

@@ -8,6 +8,9 @@ point on belong to the discarded branch: they are dropped, and the curve is the
 earlier run up to the checkpoint followed by the resumed run. Column "wandb_run"
 records which run each row comes from.
 
+Episodes that a killed run had not yet flushed to wandb are filled from the resume
+state (episode reward only; column "from_wandb" is False for them).
+
 Usage:
     python -m repro.export_curves [--names gp_seed0 gp_seed1 ...]
 """
@@ -17,6 +20,7 @@ import glob
 import os
 
 import pandas as pd
+import torch
 
 from repro.resume_from_latest import wandb_history
 
@@ -28,6 +32,7 @@ def main():
     parser.add_argument("--names", nargs="+", default=NAMES)
     parser.add_argument("--wandb_dir", default="wandb")
     parser.add_argument("--out_dir", default="results/report/curves")
+    parser.add_argument("--save_dir", default="checkpoints_phase2", help="where the resume states are")
     args = parser.parse_args()
     os.makedirs(args.out_dir, exist_ok=True)
 
@@ -46,7 +51,17 @@ def main():
         if not curve:
             print(f"{name}: no wandb run found")
             continue
-        df = pd.DataFrame([curve[e] for e in sorted(curve)])
+        # A run killed between wandb flushes loses its last few rows. The resume state
+        # keeps every episode reward, so those episodes get their reward from it and
+        # empty other columns; "from_wandb" marks them.
+        missing = [e for e in range(max(curve) + 1) if e not in curve]
+        if missing:
+            state = torch.load(os.path.join(args.save_dir, f"{name}_resume.pt"), weights_only=False,
+                               map_location="cpu")
+            for e in missing:
+                curve[e] = {"episode": e, "episode_reward": state["episode_rewards"][e], "from_wandb": False}
+            print(f"{name}: episodes {missing} missing from wandb, reward taken from the resume state")
+        df = pd.DataFrame([dict({"from_wandb": True}, **curve[e]) for e in sorted(curve)])
         assert list(df["episode"]) == list(range(len(df))), f"{name}: episodes are not contiguous"
         out = os.path.join(args.out_dir, f"{name}.csv")
         df.to_csv(out, index=False)

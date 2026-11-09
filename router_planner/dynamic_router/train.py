@@ -15,6 +15,8 @@ Usage:
 
 import os
 import argparse
+import faulthandler
+import signal
 import time
 import threading
 from .network import RouteAgent
@@ -982,6 +984,8 @@ def load_best_model_with_memory(model_path, embed_dim=768, candidate_embed_dim=7
 
 
 def main():
+    # `kill -USR1 <pid>` writes the stack of every thread to stderr, to diagnose hangs
+    faulthandler.register(signal.SIGUSR1, all_threads=True)
     args = parse_args()
 
     print("Training parameters:")

@@ -8,8 +8,10 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 DEST=${1:-/mnt/c/Users/whpj2/Documents/GraphPlanner_backup}
 mkdir -p "$DEST/cache"
+# RouterDC resume states (about 3.3 GB per seed) are left out: they only matter for
+# resuming an unfinished run, and results/routerdc.json holds the finished seeds.
 for d in wandb logs results checkpoints_phase2 data config; do
-    rsync -a --delete "$d/" "$DEST/$d/"
+    rsync -a --delete --exclude 'routerdc/' "$d/" "$DEST/$d/"
 done
 for db in cache/*.sqlite; do
     python3 -c "import sqlite3,sys; s=sqlite3.connect(sys.argv[1]); d=sqlite3.connect(sys.argv[2]); s.backup(d); d.close()" \
