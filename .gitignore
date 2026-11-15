@@ -36,3 +36,8 @@ logs_*.txt
 
 # LLM response cache and API spend ledger (shared by all local runs)
 cache/
+
+# 内部开发/交接文档，不入公开仓库
+CLAUDE.md
+repro/NOTES.md
+results/report/README.md
